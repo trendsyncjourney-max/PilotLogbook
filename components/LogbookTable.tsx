@@ -96,9 +96,14 @@ function download(content: string, type: string, filename: string) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function LogbookTable({ entries }: { entries: LogbookEntry[] }) {
-  const [visible, setVisible] = useState<Set<ColKey>>(loadVisible)
+  // Start with all columns to match SSR, then apply localStorage preference after mount
+  const [visible, setVisible] = useState<Set<ColKey>>(() => new Set(COLUMNS.map(c => c.key)))
   const [pickerOpen, setPickerOpen] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setVisible(loadVisible())
+  }, [])
 
   // Close picker on outside click
   useEffect(() => {
@@ -158,25 +163,27 @@ export function LogbookTable({ entries }: { entries: LogbookEntry[] }) {
             </Button>
 
             {pickerOpen && (
-              <div className="absolute right-0 top-9 z-20 w-52 rounded-xl border border-slate-700 bg-slate-900 shadow-xl shadow-black/40 py-1">
-                <p className="px-3 pt-2 pb-1 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <div className="absolute right-0 top-9 z-20 w-56 rounded-xl border border-slate-700 bg-slate-900 shadow-xl shadow-black/40 flex flex-col" style={{ maxHeight: 'min(400px, 70vh)' }}>
+                <p className="px-3 pt-2 pb-1 text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0">
                   Show / Hide Columns
                 </p>
-                {COLUMNS.map(col => (
-                  <button
-                    key={col.key}
-                    onClick={() => toggleCol(col.key)}
-                    className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-800 transition-colors"
-                  >
-                    <span className={visible.has(col.key) ? 'text-white' : 'text-slate-500'}>
-                      {col.label}
-                    </span>
-                    {visible.has(col.key) && (
-                      <Check className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-                    )}
-                  </button>
-                ))}
-                <div className="border-t border-slate-800 mt-1 px-3 py-2 flex gap-2">
+                <div className="overflow-y-auto flex-1 min-h-0">
+                  {COLUMNS.map(col => (
+                    <button
+                      key={col.key}
+                      onClick={() => toggleCol(col.key)}
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-800 transition-colors"
+                    >
+                      <span className={visible.has(col.key) ? 'text-white' : 'text-slate-500'}>
+                        {col.label}
+                      </span>
+                      {visible.has(col.key) && (
+                        <Check className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <div className="border-t border-slate-800 px-3 py-2 flex gap-2 shrink-0">
                   <button
                     onClick={() => { const all = new Set(COLUMNS.map(c => c.key)); setVisible(all); saveVisible(all) }}
                     className="text-xs text-blue-400 hover:text-blue-300"
