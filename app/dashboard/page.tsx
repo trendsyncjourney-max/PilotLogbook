@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { LogbookTable } from '@/components/LogbookTable'
+import { LogbookStats } from '@/components/LogbookStats'
 import { NavBar } from '@/components/NavBar'
 import { LogbookEntry } from '@/lib/types'
 
@@ -19,13 +20,14 @@ export default async function DashboardPage() {
     <div className="min-h-screen flex flex-col">
       <NavBar userEmail={user.email ?? ''} />
       <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">My Logbook</h1>
             <p className="text-slate-400 text-sm mt-1">
               {entries?.length ?? 0} flight{entries?.length !== 1 ? 's' : ''} recorded
             </p>
           </div>
+          <LogbookStats entries={(entries as LogbookEntry[]) ?? []} />
         </div>
 
         {error && (

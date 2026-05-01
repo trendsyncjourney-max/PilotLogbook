@@ -1,85 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
-import { ExtractionType } from '@/lib/types'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
-const PROMPTS: Record<ExtractionType, string> = {
-  callsign: `You are analyzing an image of an aircraft. Extract the aircraft registration/call sign (e.g., A6-EDA, G-BOAC, N12345).
-Return ONLY valid JSON in this exact format, no other text:
-{"aircraft_callsign": "REGISTRATION"}
-If you cannot find a registration, return: {"aircraft_callsign": ""}`,
+const PROMPT = `You are analyzing a photo from a commercial aviation cockpit or aviation document (such as an ACARS printout, General Declaration, flight computer screen, or any other cockpit document).
 
-  gendecl: `You are analyzing a General Declaration (GenDecl) document used in aviation. Extract:
-- The date of the flight
-- The names of the two crew members (Commander/Captain and First Officer/Co-pilot)
-- Departure airport (city or ICAO code if visible)
-- Arrival/destination airport (city or ICAO code if visible)
+Extract every piece of the following information that is visible in this image:
+- aircraft_callsign: Aircraft registration/tail number (e.g. A6-EDA, 9V-SWA)
+- aircraft_type: Aircraft model (e.g. B777-300ER, A380-800, A320neo)
+- flight_number: Flight number with airline code (e.g. EK123, QR512, SQ001)
+- date: Flight date in YYYY-MM-DD format
+- captain: Full name of the Captain / Commander (CN)
+- first_officer: Full name of the First Officer (FO)
+- departure_airport: Departure airport ICAO code (4 letters, e.g. OMDB)
+- arrival_airport: Arrival/destination airport ICAO code (4 letters, e.g. EGLL)
+- off_block_time: Off-block / pushback / OUT time in UTC HH:MM
+- takeoff_time: Takeoff / airborne / OFF time in UTC HH:MM
+- landing_time: Landing / touchdown / ON time in UTC HH:MM
+- on_block_time: On-block / chocks-on / IN time in UTC HH:MM
+- total_time: Total block time in HH:MM
 
-Return ONLY valid JSON in this exact format, no other text:
-{"date": "YYYY-MM-DD", "pilot1_name": "FULL NAME", "pilot2_name": "FULL NAME", "departure_from_gendecl": "AIRPORT", "arrival_from_gendecl": "AIRPORT"}
-For any field you cannot find, use an empty string "".`,
+Return ONLY valid JSON with exactly these keys. Use an empty string "" for any field not visible in the image. No markdown, no explanation.
 
-  mcdu: `You are analyzing a photo of an MCDU (Multipurpose Control Display Unit) or FMS (Flight Management System) screen on an aircraft.
-Extract the departure airport ICAO code and arrival/destination airport ICAO code.
-ICAO codes are 4-letter airport codes (e.g., EGLL, OMDB, KJFK, YSSY).
-Look for route information showing FROM/TO airports.
-
-Return ONLY valid JSON in this exact format, no other text:
-{"departure_airport": "ICAO", "arrival_airport": "ICAO"}
-If you cannot find a code, use an empty string "".`,
-
-  acars: `You are analyzing an ACARS (Aircraft Communications Addressing and Reporting System) screen or printout showing flight times.
-Extract the following times (all in UTC/ZULU unless otherwise noted, in HH:MM format):
-- Off-block time (also called pushback time, OUT time, or EOBT)
-- Takeoff time (also called airborne time, OFF time, or actual takeoff)
-- Landing time (also called ON time or touchdown time)
-- On-block time (also called IN time or chocks-on time)
-- Total block time (also called block-to-block time or total flight time, in HH:MM format)
-
-Return ONLY valid JSON in this exact format, no other text:
-{"off_block_time": "HH:MM", "takeoff_time": "HH:MM", "landing_time": "HH:MM", "on_block_time": "HH:MM", "total_time": "HH:MM"}
-For any field you cannot find, use an empty string "".`,
-}
+{"aircraft_callsign":"","aircraft_type":"","flight_number":"","date":"","captain":"","first_officer":"","departure_airport":"","arrival_airport":"","off_block_time":"","takeoff_time":"","landing_time":"","on_block_time":"","total_time":""}`
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('image') as File
-    const type = formData.get('type') as ExtractionType
 
-    if (!file || !type) {
-      return NextResponse.json({ success: false, error: 'Missing image or type' }, { status: 400 })
-    }
-
-    if (!PROMPTS[type]) {
-      return NextResponse.json({ success: false, error: 'Invalid extraction type' }, { status: 400 })
+    if (!file) {
+      return NextResponse.json({ success: false, error: 'Missing image' }, { status: 400 })
     }
 
     const bytes = await file.arrayBuffer()
     const base64 = Buffer.from(bytes).toString('base64')
-    const mediaType = (file.type || 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'
+    const mediaType = file.type || 'image/jpeg'
 
-    const message = await client.messages.create({
-      model: 'claude-opus-4-7',
-      max_tokens: 512,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: mediaType, data: base64 },
-            },
-            { type: 'text', text: PROMPTS[type] },
-          ],
-        },
-      ],
-    })
+    const result = await model.generateContent([
+      { inlineData: { data: base64, mimeType: mediaType } },
+      PROMPT,
+    ])
 
-    const text = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
-
-    // Strip markdown code blocks if present
+    const text = result.response.text().trim()
     const cleaned = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim()
 
     let data: Record<string, string> = {}

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -16,23 +15,21 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-
     try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
-        toast.success('Account created! Check your email to confirm.')
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
-        router.push('/dashboard')
-        router.refresh()
-      }
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: isSignUp ? 'signup' : 'signin', email, password }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      if (isSignUp) toast.success('Account created!')
+      router.push('/dashboard')
+      router.refresh()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Authentication failed')
     } finally {
