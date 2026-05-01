@@ -1,7 +1,16 @@
-export const APP_VERSION  = '1.0.0'
+export const APP_VERSION  = '1.1.0'
 export const LAST_UPDATED = '1 May 2026'
 
 export const CHANGELOG: { version: string; date: string; notes: string[] }[] = [
+  {
+    version: '1.1.0',
+    date: '1 May 2026',
+    notes: [
+      'Column visibility toggle on dashboard — choose which columns to show/hide',
+      'Column preferences remembered in browser (localStorage)',
+      'JSON backup download — export all flight data to device',
+    ],
+  },
   {
     version: '1.0.0',
     date: '1 May 2026',
