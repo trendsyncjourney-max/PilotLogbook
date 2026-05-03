@@ -7,7 +7,7 @@ import { APP_VERSION } from '@/lib/version'
 import { format } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Download, Pencil, Columns3, Check } from 'lucide-react'
+import { Download, Pencil, Columns3, Check, X } from 'lucide-react'
 import Link from 'next/link'
 
 // ── Column definitions ────────────────────────────────────────────────────────
@@ -105,18 +105,6 @@ export function LogbookTable({ entries }: { entries: LogbookEntry[] }) {
     setVisible(loadVisible())
   }, [])
 
-  // Close picker on outside click
-  useEffect(() => {
-    if (!pickerOpen) return
-    function onDown(e: MouseEvent) {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
-        setPickerOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [pickerOpen])
-
   function toggleCol(key: ColKey) {
     setVisible(prev => {
       const next = new Set(prev)
@@ -150,57 +138,73 @@ export function LogbookTable({ entries }: { entries: LogbookEntry[] }) {
         </p>
         <div className="flex items-center gap-2">
 
-          {/* Column picker */}
-          <div className="relative" ref={pickerRef}>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-slate-700 text-slate-300 hover:bg-slate-800 gap-1.5"
-              onClick={() => setPickerOpen(o => !o)}
-            >
-              <Columns3 className="h-4 w-4" />
-              Columns
-            </Button>
+          {/* Column picker button */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-slate-700 text-slate-300 hover:bg-slate-800 gap-1.5"
+            onClick={() => setPickerOpen(true)}
+          >
+            <Columns3 className="h-4 w-4" />
+            Columns
+          </Button>
 
-            {pickerOpen && (
-              <div className="absolute right-0 top-9 z-20 w-56 rounded-xl border border-slate-700 bg-slate-900 shadow-xl shadow-black/40 flex flex-col" style={{ maxHeight: 'min(400px, 70vh)' }}>
-                <p className="px-3 pt-2 pb-1 text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0">
-                  Show / Hide Columns
-                </p>
-                <div className="overflow-y-auto flex-1 min-h-0">
+          {/* Right-side drawer */}
+          {pickerOpen && (
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 z-40 bg-black/50"
+                onClick={() => setPickerOpen(false)}
+              />
+              {/* Panel */}
+              <div ref={pickerRef} className="fixed top-0 right-0 bottom-0 z-50 w-72 bg-slate-900 border-l border-slate-700 shadow-2xl flex flex-col">
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-4 border-b border-slate-800 shrink-0">
+                  <p className="text-sm font-semibold text-white">Show / Hide Columns</p>
+                  <button
+                    onClick={() => setPickerOpen(false)}
+                    className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                {/* Column list */}
+                <div className="overflow-y-auto flex-1 py-1">
                   {COLUMNS.map(col => (
                     <button
                       key={col.key}
                       onClick={() => toggleCol(col.key)}
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-800 transition-colors"
+                      className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-slate-800 transition-colors"
                     >
                       <span className={visible.has(col.key) ? 'text-white' : 'text-slate-500'}>
                         {col.label}
                       </span>
                       {visible.has(col.key) && (
-                        <Check className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                        <Check className="h-4 w-4 text-blue-400 shrink-0" />
                       )}
                     </button>
                   ))}
                 </div>
-                <div className="border-t border-slate-800 px-3 py-2 flex gap-2 shrink-0">
+                {/* Footer */}
+                <div className="border-t border-slate-800 px-4 py-3 flex gap-3 shrink-0">
                   <button
                     onClick={() => { const all = new Set(COLUMNS.map(c => c.key)); setVisible(all); saveVisible(all) }}
-                    className="text-xs text-blue-400 hover:text-blue-300"
+                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
                   >
                     Show all
                   </button>
                   <span className="text-slate-700">·</span>
                   <button
                     onClick={() => { const none = new Set<ColKey>(); setVisible(none); saveVisible(none) }}
-                    className="text-xs text-slate-500 hover:text-slate-400"
+                    className="text-sm text-slate-500 hover:text-slate-400 transition-colors"
                   >
                     Hide all
                   </button>
                 </div>
               </div>
-            )}
-          </div>
+            </>
+          )}
 
           <Button
             size="sm"
