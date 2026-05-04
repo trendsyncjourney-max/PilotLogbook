@@ -20,18 +20,18 @@ export default async function DashboardPage() {
     <div className="min-h-screen flex flex-col">
       <NavBar userEmail={user.email ?? ''} />
       <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white">My Logbook</h1>
-            <p className="text-slate-400 text-sm mt-1">
-              {entries?.length ?? 0} flight{entries?.length !== 1 ? 's' : ''} recorded
-            </p>
-          </div>
-          <LogbookStats entries={(entries as LogbookEntry[]) ?? []} />
+
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">My Logbook</h1>
+          <p className="text-slate-500 text-sm mt-0.5">
+            {entries?.length ?? 0} flight{entries?.length !== 1 ? 's' : ''} recorded
+          </p>
         </div>
 
+        <LogbookStats entries={(entries as LogbookEntry[]) ?? []} />
+
         {error && (
-          <div className="p-4 rounded-lg bg-red-900/30 border border-red-800 text-red-300 text-sm">
+          <div className="p-4 rounded-xl bg-red-900/30 border border-red-800 text-red-300 text-sm">
             Failed to load entries: {error.message}
           </div>
         )}
