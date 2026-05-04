@@ -14,8 +14,7 @@ export function NavBar({ userEmail }: { userEmail: string }) {
   const [logoError, setLogoError] = useState(false)
 
   useEffect(() => {
-    const { theme } = getProfile()
-    setTheme(theme)
+    setTheme(getProfile().theme)
   }, [])
 
   async function handleSignOut() {
@@ -29,60 +28,59 @@ export function NavBar({ userEmail }: { userEmail: string }) {
     toast.success('Signed out')
   }
 
-  const brandColor = theme?.primaryColor ?? '#2563eb'
-
   return (
-    <nav className="border-b border-slate-800/60 bg-slate-950/90 backdrop-blur-md sticky top-0 z-10">
-      {/* Airline accent line */}
+    <nav className="border-b border-slate-800/60 bg-slate-950/95 backdrop-blur-md sticky top-0 z-10">
+
+      {/* Airline accent stripe */}
       {theme && (
-        <div className="h-0.5 w-full" style={{ background: `linear-gradient(to right, ${theme.primaryColor}, ${theme.accentColor})` }} />
+        <div
+          className="h-1 w-full"
+          style={{ background: `linear-gradient(to right, ${theme.primaryColor}, ${theme.accentColor})` }}
+        />
       )}
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 h-14 flex items-center justify-between gap-4">
 
-        {/* Brand */}
-        <Link href="/dashboard" className="flex items-center gap-2.5 shrink-0 group">
-          {/* Airline logo OR default plane icon */}
-          <div className="relative shrink-0">
-            {theme && !logoError ? (
-              <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center overflow-hidden shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={theme.logoUrl}
-                  alt={theme.airlineName}
-                  className="w-6 h-6 object-contain"
-                  onError={() => setLogoError(true)}
-                />
-              </div>
-            ) : (
-              <div
-                className="p-1.5 rounded-lg border transition-colors"
-                style={{ background: `${brandColor}22`, borderColor: `${brandColor}44` }}
-              >
-                <Plane className="h-4 w-4" style={{ color: brandColor }} />
-              </div>
-            )}
-          </div>
-          <div className="hidden sm:block">
-            <span className="font-semibold text-white text-sm leading-none">Pilot AI Logbook</span>
-            {theme && (
-              <p className="text-xs leading-none mt-0.5" style={{ color: theme.primaryColor }}>
+        {/* ── Brand / Logo ── */}
+        <Link href="/dashboard" className="flex items-center gap-3 shrink-0 group">
+
+          {/* Airline logo (prominent) or default plane pill */}
+          {theme && !logoError ? (
+            <div className="w-9 h-9 rounded-xl bg-white shadow-md flex items-center justify-center overflow-hidden shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={theme.logoUrl}
+                alt={theme.airlineName}
+                className="w-7 h-7 object-contain"
+                onError={() => setLogoError(true)}
+              />
+            </div>
+          ) : (
+            <div className="p-2 rounded-xl bg-blue-600/20 border border-blue-500/30 group-hover:bg-blue-600/30 transition-colors shrink-0">
+              <Plane className="h-4 w-4 text-blue-400" />
+            </div>
+          )}
+
+          {/* Text */}
+          <div className="hidden sm:flex flex-col leading-tight">
+            <span className="font-semibold text-white text-sm">Pilot AI Logbook</span>
+            {theme ? (
+              <span className="text-xs font-medium" style={{ color: theme.primaryColor }}>
                 {theme.airlineName}
-              </p>
+              </span>
+            ) : (
+              <span className="text-xs text-slate-600">Flight Logbook</span>
             )}
           </div>
+
         </Link>
 
-        {/* Actions */}
+        {/* ── Actions ── */}
         <div className="flex items-center gap-1.5">
           <span className="text-slate-500 text-xs hidden md:block truncate max-w-48 mr-1">{userEmail}</span>
 
           <Link href="/new-entry">
-            <Button
-              size="sm"
-              className="gap-1.5 font-medium h-8 px-3 text-xs transition-colors"
-              style={{ background: brandColor }}
-            >
+            <Button size="sm" className="bg-blue-600 hover:bg-blue-500 gap-1.5 font-medium h-8 px-3 text-xs transition-colors">
               <Plus className="h-3.5 w-3.5" />
               New Entry
             </Button>
