@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { LogbookTable } from '@/components/LogbookTable'
 import { LogbookStats } from '@/components/LogbookStats'
 import { NavBar } from '@/components/NavBar'
+import { DashboardTitle } from '@/components/DashboardTitle'
 import { LogbookEntry } from '@/lib/types'
 
 export default async function DashboardPage() {
@@ -16,17 +17,14 @@ export default async function DashboardPage() {
     .select('*')
     .order('date', { ascending: false })
 
+  const count = entries?.length ?? 0
+
   return (
     <div className="min-h-screen flex flex-col">
       <NavBar userEmail={user.email ?? ''} />
       <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
 
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">My Logbook</h1>
-          <p className="text-slate-500 text-sm mt-0.5">
-            {entries?.length ?? 0} flight{entries?.length !== 1 ? 's' : ''} recorded
-          </p>
-        </div>
+        <DashboardTitle flightCount={count} />
 
         <LogbookStats entries={(entries as LogbookEntry[]) ?? []} />
 
